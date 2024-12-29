@@ -66,8 +66,8 @@ def parse_sprite_dkong(data):
     for y in range(16):
         row = [ ]
         for x in range(16):
-            c0 = 1 if data[y//8][15-x] & (0x80 >> (y&7)) else 0
-            c1 = 2 if data[y//8+2][15-x] & (0x80 >> (y&7)) else 0
+            c0 = 1 if data[x//8][y] & (0x80 >> (x&7)) else 0
+            c1 = 2 if data[x//8+2][y] & (0x80 >> (x&7)) else 0
             row.append(c0+c1)
         sprite.append(row)
     return sprite
@@ -78,8 +78,9 @@ def parse_sprite_1942(data_low, data_high):
     for y in range(16):
         row = [ ]
         for x in range(16):
-            byte = 2*x + (((15-y)&4)>>2) + (((15-y)&8)<<2)
-            bit = (15-y)&3
+            z = 15-x
+            byte =  2*(15-y) + ((z &0x8)*4) + ((z//4)&0x1)
+            bit = (z)&3
 
             c0 = 1 if data_low[byte] & (0x80 >> bit) else 0
             c1 = 2 if data_low[byte] & (0x08 >> bit) else 0
@@ -99,15 +100,21 @@ def parse_sprite(data, pacman_fmt):
     sprite = []    
     for y in range(16):
         row = []
-        for x in range(16):
-            idx = ((y&8)<<1) + (((x&8)^8)<<2) + (7-(x&7)) + 2*(y&4)
-            c0 = 1 if data[idx] & (0x08 >> (y&3)) else 0
-            c1 = 2 if data[idx] & (0x80 >> (y&3)) else 0
+        for _x in range(16):
+            x = _x
+            if pacman_fmt != "pacman": 
+                x = (x -4)&15
+
+
+            z = 24 if (y<8) else 56
+            a = (y&0x7)
+            b = 8 * ((((15-x)-4)&15)//4)
+            idx = z + a - b
+            c0 = 1 if data[idx] & (0x01 << ((15-x)&3)) else 0
+            c1 = 2 if data[idx] & (0x10 << ((15-x)&3)) else 0
             row.append(c0+c1)
         sprite.append(row)
 
-    if pacman_fmt:
-        sprite = sprite[4:] + sprite[:4]
     return sprite
 
 def dump_c_source(sprites, flip_x, flip_y, f):
@@ -162,7 +169,7 @@ def parse_spritemap(id, fmt, infiles, outfile):
 
             # read and parse all 64 sprites
             for sprite in range(64):
-                sprites.append(parse_sprite(spritemap_data[64*sprite:64*(sprite+1)], fmt == "pacman"))
+                sprites.append(parse_sprite(spritemap_data[64*sprite:64*(sprite+1)], fmt == "galaga"))
                 
     elif fmt == "1942":
         for i in range(len(infiles)//2):
@@ -217,8 +224,8 @@ def parse_spritemap(id, fmt, infiles, outfile):
     
         # we have plenty of flash space, so we simply pre-compute x/y flipped
         # versions of all sprites
-        dump_c_source(sprites, False,  True, f)
         dump_c_source(sprites,  True, False, f)
+        dump_c_source(sprites, False,  True, f)
         dump_c_source(sprites,  True,  True, f)
         
     print("};", file=f)

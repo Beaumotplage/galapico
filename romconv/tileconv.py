@@ -47,21 +47,21 @@ def parse_chr_2(data0, data1):
     for y in range(8):
         row = []
         for x in range(8):
-            c0 = 1 if data0[7-x] & (0x80>>y) else 0
-            c1 = 2 if data1[7-x] & (0x80>>y) else 0
+            c0 = 1 if data0[y] & (0x80>>x) else 0
+            c1 = 2 if data1[y] & (0x80>>x) else 0
             row.append(c0 + c1)
         char.append(row)
     return char
 
 def parse_chr(data):
-    # characters are 8x8 pixels
+    # characters are 8x8 pixels (e.g. pacman)
     char = []    
     for y in range(8):
         row = []
         for x in range(8):
-            byte = data[15 - x - 2*(y&4)]
-            c0 = 1 if byte & (0x08 >> (y&3)) else 0
-            c1 = 2 if byte & (0x80 >> (y&3)) else 0
+            byte = data[8 + y - 2*(x&4)]
+            c0 = 1 if byte & (0x08 >> (x&3)) else 0
+            c1 = 2 if byte & (0x80 >> (x&3)) else 0
             row.append(c0+c1)
         char.append(row)
     return char
@@ -72,8 +72,8 @@ def parse_chr_dd(data):
     for y in range(8):
         row = []
         for x in range(8):
-            byte = data[7 - x]
-            c = 3 if byte & (0x01 << y) else 0
+            byte = data[ y]
+            c = 3 if byte & (0x01 << x) else 0
             row.append(c)
         char.append(row)
     return char
@@ -84,11 +84,10 @@ def parse_chr_1942(data):
     for y in range(8):
         row = []
         for x in range(8):
-            if y < 4: byte = data[2*x+1]
-            else:     byte = data[2*x]
-            
-            c0 = 1 if byte & (0x10 << (y&3)) else 0
-            c1 = 2 if byte & (0x01 << (y&3)) else 0
+            if x < 4: byte = data[2*(7-y)+1]
+            else:     byte = data[2*(7-y)]
+            c0 = 1 if byte & (0x10 << (x&3)) else 0
+            c1 = 2 if byte & (0x01 << (x&3)) else 0
             row.append(c0+c1)
         char.append(row)
     return char
@@ -142,8 +141,8 @@ def parse_tile_1942(b0,b1,b2):
     for y in range(16):
         row = []
         for x in range(16):
-            bit = 1<<(y&7)
-            byte = x+(0 if (y//8) else 16)
+            bit = 1<<(x&7)
+            byte = 15-y+(0 if (x//8) else 16)
             p0 = 4 if (b0[byte] & bit) else 0
             p1 = 2 if (b1[byte] & bit) else 0
             p2 = 1 if (b2[byte] & bit) else 0
@@ -185,7 +184,7 @@ def parse_tilemap_1942(files, outname):
         for yflip in [ False, True ]:
             tiles_str = []
             for t in tiles:
-                tiles_str.append(" { " + dump_tile_1942(t,xflip,yflip) + " }")
+                tiles_str.append(" { " + dump_tile_1942(t,yflip,xflip) + " }")
             tiles_maps_str.append("{\n" + ",\n".join(tiles_str) +"\n}")
     print(",\n".join(tiles_maps_str), file=f)
     print("};", file=f)

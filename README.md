@@ -1,3 +1,34 @@
+# Galapico - Pi Pico 2 Arcade Emulator
+
+This is a port of the excellent Galagino ESP32 emulator to the Pi Pico 2, with 15kHz outputs to a CRT TV/Monitor. 
+This port is NOT by the original author, so please do not bother them with issues.
+The 'back-end' tile/sprite/video for this code differs a lot from Galagino, hence I've probably broken a few things.
+Please see below for the original Galagino text, or go to the 'galagino' Github repository
+You will need to follow the same steps to find the ROMs, process them and then compile a .uf2 file to drop onto a Pi Pico2
+You will also need to install Vs Code and the Pi Pico plugin, then import the downloaded project and compile it (release, no debug).
+
+
+Issues (many)
+Does it compile for anyone other than me? Probably need a better readme/instructions.
+
+Considerable code tidy-up needed. I threw it on GitHub prematurely, but needed to focus on other things in life.
+CPU is flat-out so DigDug is screen rolling. Need to add frameskip and also optimise Z80 execution somehow (maybe split between CPU cores better)
+Like galagino, the Z80 looks to be underclocked - at least in 1942. Setting INST_PER_FRAME to 500000 cures this but will totally overload the Pico2
+Frogger - need to finish the sprite/tile rewrite, so it doesn't work.
+Inconsistent screen placement. Relatively easy to sort, I could even manipulate the pixel clock so all games take up the same CRT size.
+Iffy sound. Donkey Kong needs to change sample rate, amongst other issues.
+I might change the title menu to a text based one for various internal reasons.
+Donkey kong is off the side by 1 pixel (thought I'd sorted that ages ago).
+
+
+
+
+See below for original text
+VVVVVVVVVVVVVV
+
+
+
+
 # Galagino - ESP32 Arcade Emulator
 
 Play Galaga, Pac-Man, Donkey Kong, Frogger, Digdug and 1942 on the ESP32

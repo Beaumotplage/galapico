@@ -1,11 +1,14 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+//Galapico TODO: Most of this is redundant, but kept here as other Pico2 configs should go here
+// ... or at least in one place!
+
 // disable e.g. if roms are missing
 #define ENABLE_PACMAN
 #define ENABLE_GALAGA
 #define ENABLE_DKONG
-#define ENABLE_FROGGER
+//#define ENABLE_FROGGER
 #define ENABLE_DIGDUG
 #define ENABLE_1942
 
@@ -53,6 +56,7 @@
 // audio config
 // #define SND_DIFF   // set to output differential audio on GPIO25 _and_ inverted on GPIO26
 
+#if 0
 // Pins used for buttons
 #define BTN_START_PIN  22
 #define BTN_COIN_PIN   21   // if this is not defined, then start will act as coin & start
@@ -61,6 +65,7 @@
 #define BTN_DOWN_PIN   15
 #define BTN_UP_PIN      4
 #define BTN_FIRE_PIN   12
+#endif
 
 #else                       // Cheap Yellow Display Conf
 
@@ -91,12 +96,6 @@
 // #define SND_DIFF   // set to output differential audio on GPIO25 _and_ inverted on GPIO26
 #define SND_LEFT_CHANNEL // Use GPIO 26 for audio
 
-#define NUNCHUCK_INPUT
-
-#define NUNCHUCK_SDA 22
-#define NUNCHUCK_SCL 27
-
-#define NUNCHUCK_MOVE_THRESHOLD 30 // This is the dead-zone for where minor movements on the stick will not be considered valid movements
 
 // Pins used for buttons
 #define BTN_START_PIN 0 //This is the "boot" button

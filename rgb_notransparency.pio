@@ -1,0 +1,75 @@
+;
+; Credit to Hunter Adams
+; RGB generation in conjunction with DMA and sync
+; Waits for vsync active then draws an entire FRAME, not just a line.
+; DMA will load in a line at a time though.
+
+; Program name
+.program rgb_notransparency
+
+    pull block 				; Pull from FIFO to OSR (only once)
+    mov isr, osr 			; Copy value from OSR to scratch register
+
+.wrap_target
+
+    out pins 32             ; Zero RGB pins in blanking (using empty FIFO)
+    mov x, isr				; Initialize counter variable
+
+    wait 1 irq 1 [31]       ; Wait for vsync active mode (starts 5 cycles after execution)
+
+colourout1:
+    pull block              ; Block state machine until we can pull a pixel byte from OSR
+    mov y,osr               ; copy osr to y scratch register
+
+    out pins,32 [9]         ; Draw pixel and wait 5 cycles
+ 	jmp x-- colourout1       ; Keep looping for horizontal active pixels 
+
+
+.wrap
+
+
+% c-sdk {
+static inline void rgb_notransparency_program_init(PIO pio, uint sm, uint offset, uint pin) {
+
+    // creates state machine configuration object c, sets
+    // to default configurations. I believe this function is auto-generated
+    // and gets a name of <program name>_program_get_default_config
+    // Yes, page 40 of SDK guide
+    pio_sm_config c = rgb_notransparency_program_get_default_config(offset);
+
+    // Map the state machine's SET and OUT pin group to three pins, the `pin`
+    // parameter to this function is the lowest one. These groups overlap.
+    sm_config_set_out_pins(&c, pin, 15);
+
+    // Set clock division 
+     sm_config_set_clkdiv(&c, 2.0f) ;
+
+    // Set this pin's GPIO function (connect PIO to the pad)
+    pio_gpio_init(pio, pin);
+    pio_gpio_init(pio, pin+1);
+    pio_gpio_init(pio, pin+2);
+    pio_gpio_init(pio, pin+3);
+    pio_gpio_init(pio, pin+4);
+    pio_gpio_init(pio, pin+5);
+    pio_gpio_init(pio, pin+6);
+    pio_gpio_init(pio, pin+7);
+    pio_gpio_init(pio, pin+8);
+    pio_gpio_init(pio, pin+9);
+    pio_gpio_init(pio, pin+10);
+    pio_gpio_init(pio, pin+11);
+    pio_gpio_init(pio, pin+12);
+    pio_gpio_init(pio, pin+13);
+    pio_gpio_init(pio, pin+14);
+    pio_gpio_init(pio, pin+15);
+
+
+    // Set the pin direction to output at the PIO
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 15, true);
+
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+
+    // Set the state machine running (commented out, I'll start this in the C)
+    // pio_sm_set_enabled(pio, sm, true);
+}
+%}

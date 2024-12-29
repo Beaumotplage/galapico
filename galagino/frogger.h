@@ -1,4 +1,6 @@
 /* frogger.h */
+//Galapico TODO: Not working, need to write scrolling routines
+
 
 #ifdef CPU_EMULATION
 
@@ -388,5 +390,224 @@ static inline void frogger_render_row(short row) {
       frogger_blit_sprite(row, s);
   }
 }
+
+
+static inline void frogger_render_tile_raster(unsigned short chunk)
+{
+
+
+    // TODO: we're still in galagino portait-TFT world so columns are vertical
+    // int col = (TV_HEIGHT / CHUNKSIZE) - chunk;
+
+    int col = chunk;
+
+    // don't render lines 0, 1, 34 and 35
+    //if (row <= 1 || row >= 34) return;
+
+    // A row is actually a column for a horizontal raster beam 
+    for (int row = 0; row < GAME_WIDTH / 8; row++)
+    {
+        // get scroll info for this row
+        unsigned char scroll = memory[0xc00 + 2 * (row - 2)];
+        scroll = ((scroll << 4) & 0xf0) | ((scroll >> 4) & 0x0f);
+
+        // in frogger scroll will only affect rows
+        // water:  8/ 9, 10/11, 12/13, 14/15, 16/17
+        // road:  20/21, 22/23, 24/25, 26/27, 28/29
+
+        // render 28 tile columns per row. Handle frogger specific
+        // scroll capabilities
+        if (scroll == 0) // no scroll in this line?
+        {
+            
+            if ((row > 2) || (row < 34))
+            {
+                unsigned short addr = tileaddr[row][(TV_HEIGHT / CHUNKSIZE) - col - 1];
+
+                const unsigned short* tile = frogger_606[memory[0x0800 + addr]];
+
+                // frogger has a very reduced color handling
+                int c = memory[0xc00 + 2 * (addr & 31) + 1] & 7;
+                const unsigned short* colors = frogger_colormap[((c >> 1) & 0x03) | ((c << 2) & 0x04)];
+
+                unsigned short* ptr = frame_buffer + 8 * (row + (TV_WIDTH * col)); // was column
+
+                // 8 pixel rows per tile
+                for (char r = 0; r < 8; r++, ptr += (TV_WIDTH - 8)) 
+                {
+                    unsigned short pix = *tile++;
+                    // 8 pixel columns per tile
+                    for (char c = 0; c < 8; c++, pix >>= 2) {
+                        if (pix & 3) *ptr = colors[pix & 3];
+                        ptr++;
+                    }
+                }
+            }
+
+        }
+        else
+        {
+
+           // if (scroll & 7)
+            //    frogger_blit_tile_scroll(row, -1, scroll);
+
+         //   for (char col = 0; col < 28; col++)
+            //    frogger_blit_tile_scroll(row, col, scroll);
+
+            if ((row > 2) || (row < 34))
+            {
+
+                unsigned short addr = 0; // Shut up, compiler
+                unsigned short mask = 0xffff;
+                int sub = scroll & 0x07;
+                if (col >= 0) {
+                    unsigned short addr = tileaddr[row][(TV_HEIGHT / CHUNKSIZE) - col - 1];
+
+                    addr = tileaddr[row][col];
+
+                    // one tile (8 pixels) further is an address offset of 32
+                    addr = (addr + ((scroll & ~7) << 2)) & 1023;
+
+                    if ((sub != 0) && (col == 27))
+                        mask = 0xffff >> (2 * sub);
+                }
+                else {
+                    // negative column is a special case for the leftmost
+                    // tile when it's only partly visible
+                    addr = tileaddr[row][0];
+                    addr = (addr + 32 + ((scroll & ~7) << 2)) & 1023;
+
+                    mask = 0xffff << (2 * (8 - sub));
+                }
+
+                const unsigned char chr = memory[0x0800 + addr];
+                const unsigned short* tile = frogger_606[chr];
+
+                // frogger has a very reduced color handling
+                int c = memory[0xc00 + 2 * (addr & 31) + 1] & 7;
+                const unsigned short* colors =
+                    frogger_colormap[((c >> 1) & 0x03) | ((c << 2) & 0x04)];
+
+                unsigned short* ptr = frame_buffer + 8 * col + sub;
+
+                // 8 pixel rows per tile
+                for (char r = 0; r < 8; r++, ptr += (224 - 8)) {
+                    unsigned short pix = *tile++ & mask;
+                    // 8 pixel columns per tile
+                    for (char c = 0; c < 8; c++, pix >>= 2) {
+                        if (pix & 3) *ptr = colors[pix & 3];
+                        ptr++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+static inline void frogger_render_sprite_raster(unsigned short chunk)
+{
+
+    // boundaries for sprites to be on this chunk
+    int upper_sprite_bound = CHUNKSIZE * (chunk + 1);
+    int lower_sprite_bound = CHUNKSIZE * chunk;
+    int chunk_vert_start = CHUNKSIZE * chunk;
+
+    for (unsigned char s = 0; s < active_sprites; s++)
+    {
+        int x_vert = 224 - sprite[s].x - 16;
+
+        // check if sprite is visible on this row
+        if ((x_vert < upper_sprite_bound) && ((x_vert + 16) > lower_sprite_bound))
+        {
+            const unsigned long* spr = dkong_sprites[sprite[s].flags & 3][sprite[s].code];
+            const unsigned short* colors = dkong_colormap_sprite[colortable_select][sprite[s].color];
+
+            short sprite_chunk_offset = x_vert - chunk_vert_start;
+
+            int lines2draw = CHUNKSIZE - sprite_chunk_offset;
+            if (lines2draw > 16)
+                lines2draw = 16;
+
+            // If we're onto the next line for the sprite...
+            if (sprite_chunk_offset < 0)
+            {
+                lines2draw = 16 + sprite_chunk_offset;
+            }
+
+            // check which sprite line to begin with
+            unsigned short startline = 0;
+            if (sprite_chunk_offset < 0)
+            {
+                startline = -sprite_chunk_offset;
+
+            }
+
+            spr += startline;
+            // calculate pixel lines to paint  
+            int scanline_start = chunk_vert_start;
+            if (sprite_chunk_offset >= 0)
+                scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
+
+            unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+
+            for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
+
+            {
+                unsigned long pix = *spr++;//& mask;
+                // 16 pixel columns per tile
+                for (char c = 0; c < 16; c++, pix >>= 2)
+                {
+                    unsigned short col = colors[pix & 3];
+                    if (pix & 3)
+                        *ptr = col;
+                    ptr++;
+                }
+            }
+        }
+    }
+}
+
+
+
+static inline void frogger_render_frame_raster()
+{
+
+    
+    // Raster beam scan, divided into sprite-sized chunks (x axis) 
+    // Means I can ditch the framebuffer(s) if RAM gets low
+    // X and Y are in vertical monitor-world, so remember y is horizontal beam and x is vertical (aargh)
+    // Real hardware does this line by line, but checking dozens of sprites on each scanline isn't efficient or necessary
+
+
+
+    frame_buffer = &nextframeptr[0];
+    //Sprites
+    // dkong has its own sprite drawing routine since unlike the other
+    // games, in dkong black is not always transparent. Black pixels
+    // are instead used for masking
+
+    for (int chunk = 0; chunk < TV_HEIGHT / CHUNKSIZE; chunk++)
+    {
+
+        unsigned short* store = &nextframeptr[chunk * CHUNKSIZE * TV_WIDTH];
+
+        //TODO:
+        // the upper screen half of frogger has a blue background
+        // using 8 in fact adds a tiny fraction of red as well. But that does not hurt
+        //memset(frame_buffer, (MACHINE_IS_FROGGER && row <= 17) ? 8 : 0, 2 * 224 * 8);
+
+        for (int x = 0; x < TV_WIDTH * CHUNKSIZE; x++)
+        {
+            store[x] = 0;
+        }
+
+        frogger_render_tile_raster(chunk);
+       // frogger_render_sprite_raster(chunk);
+
+
+    }
+}
+
 
 #endif // IO_EMULATION

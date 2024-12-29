@@ -1,6 +1,6 @@
 #ifndef _EMULATION_H_
 #define _EMULATION_H_
-
+#include "..\picostubs.h" // TODO: Try to remove me
 #ifdef ENABLE_DKONG
 #define DKONG_AUDIO_QUEUE_LEN   16
 #define DKONG_AUDIO_QUEUE_MASK (DKONG_AUDIO_QUEUE_LEN-1)

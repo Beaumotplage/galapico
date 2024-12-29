@@ -63,12 +63,39 @@ def parse_palette(name, name2=None):
                 # weighting of the lsb is slightly higher on the real
                 # device.
                 
-                b = 31*((c>>6) & 0x3)//3
+                b = 31*((c>>6) & 0x3)//3 
                 g = 63*((c>>3) & 0x7)//7
                 r = 31*((c>>0) & 0x7)//7
+        #pack for the crazy format of my PCB 
 
-        rgb = (r << 11) + (g << 5) + b
-        rgbs = ((rgb & 0xff00) >> 8) + ((rgb & 0xff) << 8)
+
+        rs = r << 3
+        gs = g << 2
+        bs = b << 3
+		
+		
+        rgbs = (rs>>5)
+        temp1 = rgbs
+        temp2 = ((gs & 0xE0)>>2)
+        rgbs = temp1 | temp2
+
+        temp1 = rgbs
+        temp2 = ((bs & 0xC0))
+        rgbs = temp1 | temp2
+
+        temp1 = rgbs
+        temp2 = ((rs & 0x18)<<5)
+        rgbs = temp1 | temp2
+
+        temp1 = rgbs
+        temp2 = ((gs & 0x18)<<7)
+        rgbs = temp1 | temp2
+		
+        temp1 = rgbs
+        temp2 = ((bs & 0x38)<<9)
+        rgbs = temp1 | temp2
+		
+                
         palette.append(rgbs)
 
     return palette

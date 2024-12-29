@@ -5,17 +5,19 @@
 
 /*
  * TODO: 
- * Don't use reset to return to menu in order to suppress noise when returning from master attract game
+ * Galapico - Probably undo many things I've broken in the conversion
  * 
  */
 
-#include <stdio.h>    // for printf
-#include <string.h>   // for memcpy
 
+#include <stdio.h>    // for printf
+#include <string.h>
 #include "Z80.h"
 #include "config.h"
 
+
 #define CPU_EMULATION
+
 #include "emulation.h"
 
 #ifdef ENABLE_DKONG
@@ -23,9 +25,27 @@
 #include "dkong_rom2.h"
 #endif
 
+
+#ifdef ENABLE_1942
+#define RAMSIZE   (8192 + 1024 + 128)
+#else
+#define RAMSIZE   (8192)
+#endif
+
+unsigned char jb_ram[RAMSIZE];
+
+// one inst at 3Mhz ~ 500k inst/sec = 500000/60 inst per frame
+// Galagino defaults to 300k
+// We will too for now, until I can optimise to run at full speed
+#define INST_PER_FRAME 300000/60/4
+//#define INST_PER_FRAME 500000/60/4
+
+
 extern void StepZ80(Z80 *R);
 extern void digdug_StepZ80(Z80 *R);
 Z80 cpu[3];    // up to three z80 supported
+
+word LoopZ80(register Z80* R) { return 0; } // PICO - not used
 
 unsigned char *memory;
 
@@ -85,10 +105,10 @@ extern unsigned char digdug_video_latch;
 
 // if galaga is installed, then use it as default in menu
 #ifdef ENABLE_GALAGA
-signed char menu_sel = MCH_GALAGA;
+signed char menu_sel = MCH_1942;
 #else
 // otherwise just use the first game
-signed char menu_sel = 1;
+signed char menu_sel = -1;
 #endif
 
 #ifdef MASTER_ATTRACT_MENU_TIMEOUT
@@ -202,8 +222,7 @@ unsigned char namco_read_dd(unsigned short Addr) {
 }
 #endif
 
-// one inst at 3Mhz ~ 500k inst/sec = 500000/60 inst per frame
-#define INST_PER_FRAME 300000/60/4
+
 
 #ifdef ENABLE_PACMAN
 #include "pacman.h"
@@ -469,15 +488,15 @@ unsigned char RdZ80(unsigned short Addr) {
 }
 
 #ifndef SINGLE_MACHINE
-extern void hw_reset(void);
 
-// return to main menu
+// return to main menu. TODO
 void emulation_reset(void) {
-#if 1
-  hw_reset();
-#else
+
+   
+ //  hw_reset();
+
   // return to menu
-  machine = MCH_MENU;
+  machine = -1;
 
   // reset all CPUs
   for(current_cpu=0;current_cpu<3;current_cpu++)
@@ -486,7 +505,7 @@ void emulation_reset(void) {
 #ifdef ENABLE_DKONG
   i8048_reset(&cpu_8048);
 #endif      
-#endif
+
 }
 #endif
 
@@ -546,15 +565,14 @@ unsigned char i8048_xdm_read(struct i8048_state_S *state, unsigned char addr) {
 #endif
 
 
-#ifdef ENABLE_1942
-#define RAMSIZE   (8192 + 1024 + 128)
-#else
-#define RAMSIZE   (8192)
-#endif
+
+
 
 void prepare_emulation(void) {
-  memory = malloc(RAMSIZE);
-  memset(memory, 0, RAMSIZE);
+
+
+    memory = &jb_ram[0];
+
 
 #if defined(MASTER_ATTRACT_MENU_TIMEOUT) && !defined(SINGLE_MACHINE)
   master_attract_timeout = millis();
@@ -577,7 +595,7 @@ void emulate_frame(void) {
   if(machine == MCH_MENU) {
     static unsigned char last_mask = 0;
     // get a mask of currently pressed keys
-    unsigned char keymask = buttons_get();     
+    unsigned char keymask =  buttons_get();
 
     // any key will cancel the master attract mode and
     // the machine stays in the menu forever once the

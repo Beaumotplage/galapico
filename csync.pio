@@ -1,0 +1,83 @@
+.program csync
+; Composite Sync PIO program
+; Derived from Van Hunter Adams's excellent examples
+; Comments may not be 100% accurate
+
+    pull block                   ; pull from fifo to osr. V-active pulses (e.g. 242)
+
+.wrap_target
+
+program_wrap:
+
+
+hsync:                       ; (do hsync 243 times)
+
+    set pins, 0 [1]         ; set pin low for sync pulse 
+    set pins, 1             ; back porch
+
+    irq 1                   ; Set HSYNC IRQ to signal so RGB can start throwing out pxels
+    set y 8  
+
+    jmp x-- hsync [18]      ; front and active porch                                                
+
+
+v_frontporch:               ; Hsync stays the same but we stop IRQs to stop RGB drawing lines
+
+    set pins, 0 [1] 
+    set pins, 1 [1]         ; back porch (extra delay cycle here as no IRQ instruction)
+
+    set x 6
+    jmp y-- v_frontporch  [18]                                                         
+
+    irq 0                   ;VSYNC IRQ
+    irq clear 0 
+    set pins, 0 [4] 
+
+vsync:                      ; Vsync low (Hsync pulses can be inverted or just stay low - we'll do that)
+ 
+    set y   24  
+    jmp x-- vsync [21]   ; was 18                                                     
+
+vsync_backporch:
+
+    set pins, 0 [1]      ; Back porch Vertical. Normal Hsync but no IRQ
+    set pins, 1          ; back porch
+    mov x, osr 
+    jmp y-- vsync_backporch [19]                                                         
+
+.wrap                      
+
+% c-sdk {
+static inline void csync_program_init(PIO pio, uint sm, uint offset, uint pin) {
+
+    // creates state machine configuration object c, sets
+    // to default configurations. I believe this function is auto-generated
+    // and gets a name of <program name>_program_get_default_config
+    // Yes, page 40 of SDK guide
+    pio_sm_config c = csync_program_get_default_config(offset);
+
+    // Map the state machine's SET pin group to one pin, namely the `pin`
+    // parameter to this function.
+    sm_config_set_set_pins(&c, pin, 1);
+    sm_config_set_out_pins(&c, pin, 1);
+
+    // Set clock division 125MHz 
+    // Namco is 6.25MHz/8
+    sm_config_set_clkdiv(&c, 400.0f);//163.0f*2.0f*(155.0f/125.0f)) ; 
+
+    // Set this pin's GPIO function (connect PIO to the pad)
+    pio_gpio_init(pio, pin);
+
+    sm_config_set_jmp_pin(&c, pin);
+    
+    // Set the pin direction to output at the PIO
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);  //1 output
+    
+
+    // Load our configuration, and jump to the start of the program
+    pio_sm_init(pio, sm, offset, &c);
+
+    // Set the state machine running (commented out so can be synchronized w/ vsync)
+     pio_sm_set_enabled(pio, sm, true);
+}
+%}
