@@ -52,7 +52,6 @@ add_executable(Galapico
     hal_pwm_audio.cpp
     hal_Video.cpp 
     galagino/i8048.cpp
-    galagino/leds.cpp
     galagino/z80.cpp
     galagino/emulation.cpp)
 
