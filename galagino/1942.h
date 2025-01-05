@@ -330,7 +330,7 @@ static inline void _1942_render_foreground_raster(unsigned short chunk)
 				// colorprom sb-0.f1 contains 64 color groups
 				const unsigned short* colors = _1942_colormap_chars[attr & 63];
 
-				unsigned short* ptr = frame_buffer + (8 * row + (8 * col * TV_WIDTH));
+				unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + (8 * row + (8 * col * TV_WIDTH));
 
 
 				// 8 pixel rows per tile
@@ -392,7 +392,7 @@ static inline void _1942_render_sprite_raster(unsigned short chunk)
 			if (sprite_chunk_offset >= 0)
 				scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
 
-			unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
 
 #if 0
@@ -439,13 +439,14 @@ static inline void _1942_render_tile_raster(unsigned short chunk)
 	int yoffset = (slowcount >> 5) & 15;
 	for (int y_block = 0; y_block < TV_HEIGHT / 16; y_block++)
 	{
-		for (int x_block = 0; x_block < GAME_WIDTH / 16; x_block++)
+		for (int x_block = 0; x_block < GAME_WIDTH / 16 -1; x_block++)
 		{
 			line = (16 + ((TV_WIDTH / 16 - x_block - 5) * 16) + _1942_scroll) & 511;
 			int y_max = (TV_HEIGHT / 16) - 1;
 			int pixels_off_grid = (line - 1) & 0x0F;
 
-			unsigned short* ptr = &frame_buffer[x_block * 16 + (y_block * 16 * TV_WIDTH) + pixels_off_grid]; // was column
+			unsigned short* ptr = &frame_buffer[CRT_ROW_OFFSET + x_block * 16 + (y_block * 16 * TV_WIDTH) + pixels_off_grid]; // was column
+
 
 			unsigned short addr = 0x2000 + 32 * (((line - 1) & 511) / 16) + 1;
 			unsigned char attr = memory[addr + (y_max - y_block) + 16];

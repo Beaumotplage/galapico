@@ -327,7 +327,7 @@ static void galaga_render_stars_sets_raster(const struct galaga_star* set0, cons
 			unsigned short y = ((s->y + stars_scroll_y) & 0xff) + 16 - row * 8;
 
 			if (y < 8 && x < 224)
-				frame_buffer[y + 8 * row + (x * TV_WIDTH)] = s->col;
+				frame_buffer[y + 8 * row + (x * TV_WIDTH) +CRT_ROW_OFFSET] = s->col;
 
 			s = set1 + star_cntr;
 
@@ -335,7 +335,7 @@ static void galaga_render_stars_sets_raster(const struct galaga_star* set0, cons
 			y = ((s->y + stars_scroll_y) & 0xff) + 16 - row * 8;
 
 			if (y < 8 && x < 224)
-				frame_buffer[y + 8 * row + (x * TV_WIDTH)] = s->col;
+				frame_buffer[y + 8 * row + (x * TV_WIDTH) + +CRT_ROW_OFFSET] = s->col;
 		}
 	}
 }
@@ -388,7 +388,7 @@ static inline void galaga_render_sprite_raster(unsigned short chunk)
 				lines2draw = 0;
 			}
 
-			unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* ptr = frame_buffer+ + CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
 			for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
 			{
@@ -422,7 +422,7 @@ static inline void galaga_render_tile_raster(unsigned short chunk)
 			const unsigned short* tile = gg1_9_4l[memory[addr]];
 			const unsigned short* colors = galaga_colormap_tiles[memory[0x400 + addr] & 63];
 
-			unsigned short* ptr = frame_buffer + 8 * (row + (TV_WIDTH * col)); // was column
+			unsigned short* ptr = frame_buffer  +CRT_ROW_OFFSET + 8 * (row + (TV_WIDTH * col)); // was column
 
 				// 8 pixel rows per tile
 			for (char r = 0; r < 8; r++, ptr += (TV_WIDTH - 8))

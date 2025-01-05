@@ -29,6 +29,8 @@ colourout1:
 
 
 % c-sdk {
+    #include "galagino\config.h"
+
 static inline void rgb_notransparency_program_init(PIO pio, uint sm, uint offset, uint pin) {
 
     // creates state machine configuration object c, sets
@@ -42,7 +44,7 @@ static inline void rgb_notransparency_program_init(PIO pio, uint sm, uint offset
     sm_config_set_out_pins(&c, pin, 15);
 
     // Set clock division 
-     sm_config_set_clkdiv(&c, 2.0f) ;
+     sm_config_set_clkdiv(&c, raster_clock_divider) ;
 
     // Set this pin's GPIO function (connect PIO to the pad)
     pio_gpio_init(pio, pin);

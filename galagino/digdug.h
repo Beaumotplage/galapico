@@ -293,7 +293,7 @@ static inline void digdug_render_sprite_raster(unsigned short chunk)
 			if (sprite_chunk_offset >= 0)
 				scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
 
-			unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* ptr = frame_buffer +CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
 			for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
 
@@ -346,7 +346,7 @@ static inline void digdug_render_tile_raster(unsigned short chunk)
 		if (digdug_video_latch & 4)
 			fgcol = ((unsigned short*)digdug_colormaps)[chr & 15];
 
-		unsigned short* ptr = frame_buffer + 8 * (row + (TV_WIDTH * col)); // was column
+		unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + 8 * (row + (TV_WIDTH * col)); // was column
 
 			  // 8 pixel rows per tile
 		for (char r = 0; r < 8; r++, ptr += (TV_WIDTH - 8))

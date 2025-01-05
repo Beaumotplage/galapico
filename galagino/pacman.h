@@ -147,7 +147,7 @@ void pacman_render_tile_raster(int chunk)
 		const unsigned short* colors = pacman_colormap[memory[0x400 + addr] & 63];
 
 		//unsigned short* ptr = frame_buffer + 8 * col;
-		unsigned short* ptr = frame_buffer + 8 * (row + (TV_WIDTH * col));
+		unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + 8 * (row + (TV_WIDTH * col));
 
 		// 8 pixel rows per tile
 		for (char r = 0; r < 8; r++, ptr += (TV_WIDTH - 8))
@@ -209,7 +209,7 @@ static inline void pacman_render_sprite_raster(unsigned short chunk)
 			if (sprite_chunk_offset >= 0)
 				scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
 
-			unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
 			for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
 			{

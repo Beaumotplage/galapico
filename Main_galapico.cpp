@@ -170,8 +170,10 @@ void render_logo(short row, const unsigned short *logo, char active)
     ipix -= row * 224;
     
   while(ipix < pix2draw) {
-    if(data[0] != marker)
-      vert_buffer[ipix++] = active?*data++:grey[0xFF & *data++];
+      if (data[0] != marker)
+      {
+          vert_buffer[ipix++] = active ? *data++ : grey[0xFF & *data++];
+      }
     else {
       unsigned short color = data[2];
       if(!active) color = grey[color & 0xFF];
@@ -883,7 +885,5 @@ int main()
     }
 
 }
-
-
 
 

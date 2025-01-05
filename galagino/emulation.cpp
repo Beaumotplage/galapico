@@ -570,9 +570,8 @@ unsigned char i8048_xdm_read(struct i8048_state_S *state, unsigned char addr) {
 
 void prepare_emulation(void) {
 
-
     memory = &jb_ram[0];
-
+    memset(memory, 0, RAMSIZE);
 
 #if defined(MASTER_ATTRACT_MENU_TIMEOUT) && !defined(SINGLE_MACHINE)
   master_attract_timeout = millis();

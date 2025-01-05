@@ -101,11 +101,11 @@ def parse_sprite(data, pacman_fmt):
     for y in range(16):
         row = []
         for _x in range(16):
-            x = _x
-            if pacman_fmt != "pacman": 
-                x = (x -4)&15
-
-
+            if pacman_fmt != "pacman":
+                x = (_x -4)&15 
+            else:
+                x = _x
+			   
             z = 24 if (y<8) else 56
             a = (y&0x7)
             b = 8 * ((((15-x)-4)&15)//4)
@@ -169,7 +169,7 @@ def parse_spritemap(id, fmt, infiles, outfile):
 
             # read and parse all 64 sprites
             for sprite in range(64):
-                sprites.append(parse_sprite(spritemap_data[64*sprite:64*(sprite+1)], fmt == "galaga"))
+                sprites.append(parse_sprite(spritemap_data[64*sprite:64*(sprite+1)], fmt))
                 
     elif fmt == "1942":
         for i in range(len(infiles)//2):

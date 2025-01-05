@@ -162,8 +162,6 @@ void Halvideo_core1(void)
         if (ready)
         {
 //            gpio_put(TEST_PIN, 1);
-                galapico_update_screen();
-
               galapico_render_audio_video();
 //            gpio_put(TEST_PIN, 0);
 
@@ -183,31 +181,38 @@ void hsync_handler(void)
 // 60Hz VSYNC for main CPU
 void __no_inline_not_in_flash_func  (vsync_handler)(void) 
 {
-    gpio_put(TEST_PIN, 1);
-
-    // Double frame buffers
-    if (outputframeptr == &framebuffer[0][0])
+       gpio_put(TEST_PIN, 1);
+        /* See if we've missed a frame - DMA will have incremented*/
+        //TODO: This is crap, shakes the screen 
+  //  if (dma_hw->ch[rgb_chan_layer_top_data].transfer_count > TV_WIDTH*(TV_HEIGHT-2)  )
     {
-        dma_hw->ch[rgb_chan_layer_top_data].read_addr = (uint32_t) &framebuffer[1][0];
+        
 
-        outputframeptr = &framebuffer[1][0];
-        nextframeptr = &framebuffer[0][0];
-  
+        // Double frame buffers
+        if (outputframeptr == &framebuffer[0][0])
+        {
+            dma_hw->ch[rgb_chan_layer_top_data].read_addr = (uint32_t) &framebuffer[1][0];
+
+            outputframeptr = &framebuffer[1][0];
+            nextframeptr = &framebuffer[0][0];
+    
+        }
+        else
+        {
+            dma_hw->ch[rgb_chan_layer_top_data].read_addr = (uint32_t) &framebuffer[0][0];
+
+            outputframeptr = &framebuffer[0][0];
+            nextframeptr = &framebuffer[1][0];
+        }
+    
+
+        galapico_update_screen();
+        
+        ready = 1;
+
+        galapico_emulate_frame();
     }
-    else
-    {
-        dma_hw->ch[rgb_chan_layer_top_data].read_addr = (uint32_t) &framebuffer[0][0];
-
-        outputframeptr = &framebuffer[0][0];
-        nextframeptr = &framebuffer[1][0];
-    }
-
-    ready = 1;
-
-    galapico_emulate_frame();
-
     gpio_put(TEST_PIN, 0);
-
 }
 
 

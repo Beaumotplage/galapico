@@ -2,7 +2,6 @@
 //Galapico TODO: Tiles wrapping by one pixel to the left
 // Needs different sound sample rate.
 
-
 #ifdef CPU_EMULATION
 
 #include "dkong_rom1.h"
@@ -191,7 +190,7 @@ static inline void dkong_render_tile_raster(unsigned short chunk)
 
 		//	unsigned short* ptr = frame_buffer + 8 * (row + (TV_WIDTH * col)); // was column
 
-			unsigned int pointeroffset = 8 * (row + (TV_WIDTH * col));
+			unsigned int pointeroffset = +CRT_ROW_OFFSET + 8 * (row + (TV_WIDTH * col));
 			if (pointeroffset >= (TV_WIDTH * TV_HEIGHT)-100 )
 			{
 				pointeroffset = TV_WIDTH * TV_HEIGHT - 100;
@@ -260,7 +259,7 @@ static inline void dkong_render_sprite_raster(unsigned short chunk)
 			if (sprite_chunk_offset >= 0)
 				scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
 
-			unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* ptr = frame_buffer+ CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
 			for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
 

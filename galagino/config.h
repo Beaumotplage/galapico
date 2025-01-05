@@ -1,9 +1,6 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-//Galapico TODO: Most of this is redundant, but kept here as other Pico2 configs should go here
-// ... or at least in one place!
-
 // disable e.g. if roms are missing
 #define ENABLE_PACMAN
 #define ENABLE_GALAGA
@@ -32,75 +29,12 @@
 
 #include "dip_switches.h"
 
-// #define CHEAP_YELLOW_DISPLAY_CONF
+// Choose when to start drawing the games (where I've implemented it). This will shift the game down the screen (with the CRT mounted vertical)
+#define CRT_ROW_OFFSET (24)
 
-#ifndef CHEAP_YELLOW_DISPLAY_CONF // Config as it was before
-
-// video config
-#define TFT_SPICLK  40000000    // 40 Mhz. Some displays cope with 80 Mhz
-
-#define TFT_CS   5
-#define TFT_DC  32
-#define TFT_RST 27
-#define TFT_BL  13    // don't set if backlight is hard wired
-#define TFT_ILI9341   // define for ili9341, otherwise st7789
-#define TFT_VFLIP     // define for upside down
-
-// x and y offset of 224x288 pixels inside the 240x320 screen
-#define TFT_X_OFFSET  8
-#define TFT_Y_OFFSET 16
-
-#define LED_PIN        16   // pin used for optional WS2812 stripe
-#define LED_BRIGHTNESS 50   // range 0..255
-
-// audio config
-// #define SND_DIFF   // set to output differential audio on GPIO25 _and_ inverted on GPIO26
-
-#if 0
-// Pins used for buttons
-#define BTN_START_PIN  22
-#define BTN_COIN_PIN   21   // if this is not defined, then start will act as coin & start
-#define BTN_LEFT_PIN   33
-#define BTN_RIGHT_PIN  14
-#define BTN_DOWN_PIN   15
-#define BTN_UP_PIN      4
-#define BTN_FIRE_PIN   12
-#endif
-
-#else                       // Cheap Yellow Display Conf
-
-// video config
-#define TFT_SPICLK 40000000 // 40 Mhz. Some displays cope with 80 Mhz
-
-#define TFT_MISO 12
-#define TFT_MOSI 13
-#define TFT_SCLK 14
-
-#define TFT_CS 15
-#define TFT_DC 2
-#define TFT_RST -1
-#define TFT_BL 21   // don't set if backlight is hard wired
-#define TFT_ILI9341 // define for ili9341, otherwise st7789
-// #define TFT_VFLIP   // define for upside down
-
-// #define TFT_MAC  0x20  // some CYD need this to rotate properly and have correct colors
-
-// x and y offset of 224x288 pixels inside the 240x320 screen
-#define TFT_X_OFFSET 8
-#define TFT_Y_OFFSET 16
-
-#define LED_PIN 16        // pin used for optional WS2812 stripe
-#define LED_BRIGHTNESS 50 // range 0..255
-
-// audio config (leave both commented out for GPIO 25 for Audio)
-// #define SND_DIFF   // set to output differential audio on GPIO25 _and_ inverted on GPIO26
-#define SND_LEFT_CHANNEL // Use GPIO 26 for audio
+// Fine tune the length of the screen. Be careful. 0.05 is a fair few pixels 
+#define raster_clock_divider (1.85f)
 
 
-// Pins used for buttons
-#define BTN_START_PIN 0 //This is the "boot" button
-// #define BTN_COIN_PIN 21 // if this is not defined, then start will act as coin & start
-
-#endif // #ifndef CHEAP_YELLOW_DISPLAY_CONF
 
 #endif // _CONFIG_H_
