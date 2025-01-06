@@ -1,5 +1,7 @@
 # Galapico - Pi Pico 2 Arcade Emulator
 
+https://www.youtube.com/watch?v=WvlSHfgt45Q
+
 This is a port of the excellent Galagino ESP32 emulator to the Pi Pico 2, with 15kHz outputs to a CRT TV/Monitor. 
 This port is NOT by the original author, so please do not bother them with issues.
 The 'back-end' tile/sprite/video for this code differs a lot from Galagino, hence I've probably broken a few things.
