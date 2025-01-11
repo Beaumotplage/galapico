@@ -16,10 +16,11 @@ Does it compile for anyone other than me? Probably need a better readme/instruct
 
 Considerable code tidy-up needed. I threw it on GitHub prematurely, but needed to focus on other things in life.
 Digdug is running 1.5MHz CPUs to avoid overloading the Pico.
-Like galagino, the Z80 looks to be underclocked on some stuff - at least in 1942. Setting INST_PER_FRAME to 500000 cures this but will totally overload the Pico2
-Frogger - need to finish the sprite/tile rewrite, so it doesn't work.
-1942 scrolling and boarders. And the half-screen sprite feature.
-Iffy sound. Donkey Kong needs to change sample rate, amongst other issues.
+Like galagino, the Z80 looks to be underclocked on some stuff - at least in 1942. 
+    Setting INST_PER_FRAME to 500000 cures this but will totally overload the Pico2.
+     I've resorted to individual INST_PER_FRAME for each game (config.h). 
+Frogger - leftmost tiles for scrolling items need sorting. Horrible audio squeal.
+Iffy sound generally. Donkey Kong needs to change sample rate, amongst other issues. 
 I might change the title menu to a text based one for various internal reasons.
 Donkey kong is off the side by 1 pixel (thought I'd sorted that ages ago).
 
