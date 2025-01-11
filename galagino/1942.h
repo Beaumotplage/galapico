@@ -199,12 +199,12 @@ static inline void _1942_WrZ80(unsigned short Addr, unsigned char Value) {
 	}
 }
 
-//
+
 static inline void _1942_run_frame(void) {
 	game_started = 1;
 
 	for (char f = 0; f < 4; f++) {
-		for (int i = 0; i < INST_PER_FRAME / 3; i++) {
+		for (int i = 0; i < INST_PER_FRAME_1942 / 3; i++) {
 			current_cpu = 0;
 			StepZ80(&cpu[0]); StepZ80(&cpu[0]); StepZ80(&cpu[0]); StepZ80(&cpu[0]);
 			if (!sub_cpu_reset) {
@@ -393,35 +393,83 @@ static inline void _1942_render_sprite_raster(unsigned short chunk)
 				scanline_start = (chunk * CHUNKSIZE) + sprite_chunk_offset; // i.e. sprite[].x
 
 			unsigned short* ptr = frame_buffer + CRT_ROW_OFFSET + ((scanline_start)*TV_WIDTH) + sprite[s].y;
+			unsigned short* halfscreen_ptr = frame_buffer + TV_WIDTH * (TV_HEIGHT/2);
+			
 
-
-#if 0
-			// set mask for "left screen half only sprites"
-			if (sprite[s].flags & 0x80) {
-				if (sprite[s].x >= 113)    return;
-				if (sprite[s].x > 113 - 16)  lsr64(mask, sprite[s].x - (113 - 16));
-			}
-
-			// set mask for "right screen half only sprites"
-			if (sprite[s].flags & 0x40) {
-				if (sprite[s].x <= 113 - 16) return;
-				if (sprite[s].x < 113)     lsl64(mask, 113 - sprite[s].x);
-			}
-#endif
-
-			for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
+			// Bottom half only sprite
+			if (sprite[s].flags & 0x80)
 			{
+				// Is this breaking the top half somehow?
+				for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
+				{
+					unsigned long pix = *spr++;
 
-				unsigned long pix = *spr++;
-				for (char c = 0; c < 8; c++, pix >>= 4) {
-					if ((pix & 15) != 15) *ptr = colors[pix & 15];
-					ptr++;
+					if (ptr < halfscreen_ptr)
+					{
+						pix = 0xFFFFFFFF;
+					}
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
+
+					pix = *spr++;
+					if (ptr < halfscreen_ptr)
+					{
+						pix = 0xFFFFFFFF;
+					}
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
+
 				}
+			}
+			// Top half only sprite"
+			else if (sprite[s].flags & 0x40)
+			{
+				for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
+				{
+					unsigned long pix = *spr++;
 
-				pix = *spr++;
-				for (char c = 0; c < 8; c++, pix >>= 4) {
-					if ((pix & 15) != 15) *ptr = colors[pix & 15];
-					ptr++;
+					if (ptr > halfscreen_ptr)
+					{
+						pix = 0xFFFFFFFF;
+					}
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
+
+					pix = *spr++;
+					if (ptr > halfscreen_ptr)
+					{
+						pix = 0xFFFFFFFF;
+					}
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
+
+				}
+			}
+
+			else
+			{
+				for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
+				{
+
+					unsigned long pix = *spr++;
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
+
+					pix = *spr++;
+					for (char c = 0; c < 8; c++, pix >>= 4) {
+						if ((pix & 15) != 15) *ptr = colors[pix & 15];
+						ptr++;
+					}
 				}
 			}
 		}
@@ -453,10 +501,85 @@ static inline void _1942_render_tile_raster(unsigned short chunk)
 			unsigned short chr = memory[addr + (y_max - y_block)] + ((attr & 0x80) << 1);
 			const unsigned long* tile = sr_08_a1[(attr >> 5) & 3][chr];// +2 * yoffset;
 			const unsigned short* colors = _1942_colormap_tiles[_1942_palette][attr & 31];
-
+			
+			if (x_block == 0)
 			{
+				//This is sub-optimal. You could probably plot empty black tiles off the edges of the screen for less cpu cycles
+				// But we're not exactly short of cycles for plotting video
+				pixels_off_grid = 16 - pixels_off_grid;
 
-				// Draw this tile out, scanning vertically
+				unsigned int top_mask[9] = { 0xFFFFFFFF, 0xFFFFFFF0, 0xffffff00, 0xfffff000, 0xffff0000, 0xfff00000, 0xff000000, 0xf0000000, 0x00000000 };
+				
+				if (pixels_off_grid < 8)
+				{	
+					//  Mask off the first 8 pixels
+					// second 8 pixels as-is
+					for (int y = 0; y < 16; y++, ptr += TV_WIDTH - 16)
+					{
+						unsigned long pix = *tile++;
+						pix &= top_mask[pixels_off_grid];
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];
+						pix = *tile++;
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];
+					}	
+				}
+				else
+				{
+					for (int y = 0; y < 16; y++, ptr += TV_WIDTH - 16)
+					{
+						// Clear the first 8 pixels
+						//  Mask off the second 32-bit word						
+						unsigned long pix = *tile++;
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = 0; // First 8 pixels are zero
+						pix = *tile++;	
+						pix &= top_mask[pixels_off_grid - 8];
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];
+					
+					}
+
+				}
+			}
+			else if (x_block == GAME_WIDTH / 16 - 2)
+			{
+				unsigned int top_mask[9] = { 0x00000000, 0x0000000F, 0x000000FF, 0x00000FFF, 0x0000ffff, 0x000fffff, 0x00ffffff, 0x0fffffff, 0xffffffff };
+
+				pixels_off_grid = 16 -pixels_off_grid;
+
+				if (pixels_off_grid < 8)
+				{
+					// Mask off first 8 pixels
+					// second 8 pixels clear
+					for (int y = 0; y < 16; y++, ptr += TV_WIDTH - 16)
+					{
+						unsigned long pix = *tile++;
+						pix &= top_mask[pixels_off_grid];
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];
+						pix = *tile++;
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = 0;
+					}
+
+				}
+				else
+				{
+					// First 8 pixels as-is
+					// Mask second 8 pixels
+
+					for (int y = 0; y < 16; y++, ptr += TV_WIDTH - 16)
+					{
+						
+						unsigned long pix = *tile++;
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7]; // First 8 pixels are zero
+						
+						pix = *tile++;
+						pix &= top_mask[(pixels_off_grid - 8)];
+						for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];	
+					}
+				}
+			}
+			else
+			{
+				// A normal tile.
+				// Draw all this tile out
 				for (int y = 0; y < 16; y++, ptr += TV_WIDTH - 16)
 				{
 					unsigned long pix = *tile++;
@@ -465,6 +588,7 @@ static inline void _1942_render_tile_raster(unsigned short chunk)
 					for (char c = 0; c < 8; c++, pix >>= 4) *ptr++ = colors[pix & 7];
 				}
 			}
+			
 		}
 	}
 }

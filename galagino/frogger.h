@@ -1,6 +1,9 @@
 /* frogger.h */
 //Galapico TODO: Not working, need to write scrolling routines
 
+// A blue value of 8
+#define BACKGROUND_COLOUR (0b000000001000000)
+
 
 #ifdef CPU_EMULATION
 
@@ -190,7 +193,7 @@ static inline unsigned char frogger_InZ80(unsigned short Port) {
 }
 
 static inline void frogger_run_frame(void) {
-  for(int i=0;i<INST_PER_FRAME;i++) {
+  for(int i=0;i<INST_PER_FRAME_FROGGER;i++) {
     // audio CPU speed is crucial here as it determines the
     // audio playback rate
     current_cpu=0; StepZ80(&cpu[0]); StepZ80(&cpu[0]); StepZ80(&cpu[0]); StepZ80(&cpu[0]);
@@ -405,7 +408,7 @@ static inline void frogger_render_tile_raster(unsigned short chunk)
     //if (row <= 1 || row >= 34) return;
 
     // A row is actually a column for a horizontal raster beam 
-    for (int row = 0; row < GAME_WIDTH / 8; row++)
+    for (int row = 0; row < GAME_WIDTH / 8 - 2; row++)
     {
         // get scroll info for this row
         unsigned char scroll = memory[0xc00 + 2 * (row - 2)];
@@ -417,6 +420,7 @@ static inline void frogger_render_tile_raster(unsigned short chunk)
 
         // render 28 tile columns per row. Handle frogger specific
         // scroll capabilities
+        
         if (scroll == 0) // no scroll in this line?
         {
             
@@ -447,7 +451,7 @@ static inline void frogger_render_tile_raster(unsigned short chunk)
         }
         else
         {
-
+            
            // if (scroll & 7)
             //    frogger_blit_tile_scroll(row, -1, scroll);
 
@@ -460,24 +464,27 @@ static inline void frogger_render_tile_raster(unsigned short chunk)
                 unsigned short addr = 0; // Shut up, compiler
                 unsigned short mask = 0xffff;
                 int sub = scroll & 0x07;
-                if (col >= 0) {
-                    unsigned short addr = tileaddr[row][(TV_HEIGHT / CHUNKSIZE) - col - 1];
+             
+                if (col < (TV_HEIGHT / CHUNKSIZE) -1 ) 
+                {
+                    addr = tileaddr[row][(TV_HEIGHT / CHUNKSIZE) - col -1];
+                    
+                    //addr = tileaddr[row][col];
 
-                    addr = tileaddr[row][col];
-
-                    // one tile (8 pixels) further is an address offset of 32
+                    //JB one tile (8 pixels) further is an address offset of 32
                     addr = (addr + ((scroll & ~7) << 2)) & 1023;
 
-                    if ((sub != 0) && (col == 27))
-                        mask = 0xffff >> (2 * sub);
+//                    if ((sub != 0) && (col == 27))
+//                        mask = 0xffff >> (2 * sub);
                 }
                 else {
                     // negative column is a special case for the leftmost
                     // tile when it's only partly visible
-                    addr = tileaddr[row][0];
+                    addr = tileaddr[row][(TV_HEIGHT / CHUNKSIZE) - col -1];
                     addr = (addr + 32 + ((scroll & ~7) << 2)) & 1023;
+                    //addr = (addr + ((scroll & ~7) << 2)) & 1023;
 
-                    mask = 0xffff << (2 * (8 - sub));
+                   // mask = 0xffff << (2 * (8 - sub));
                 }
 
                 const unsigned char chr = memory[0x0800 + addr];
@@ -488,11 +495,14 @@ static inline void frogger_render_tile_raster(unsigned short chunk)
                 const unsigned short* colors =
                     frogger_colormap[((c >> 1) & 0x03) | ((c << 2) & 0x04)];
 
-                unsigned short* ptr = frame_buffer + 8 * col + sub;
+//                unsigned short* ptr = frame_buffer + 8 * col + sub;
+                
+//                unsigned short* ptr = frame_buffer + 8 * ( (TV_WIDTH * col + sub)); // was column
+                unsigned short* ptr = frame_buffer +(-TV_WIDTH*(sub))+8 * (row+(TV_WIDTH * col)); // was column
 
                 // 8 pixel rows per tile
-                for (char r = 0; r < 8; r++, ptr += (224 - 8)) {
-                    unsigned short pix = *tile++ & mask;
+                for (char r = 0; r < 8; r++, ptr += (TV_WIDTH - 8)) {
+                    unsigned short pix = *tile++;// &mask;
                     // 8 pixel columns per tile
                     for (char c = 0; c < 8; c++, pix >>= 2) {
                         if (pix & 3) *ptr = colors[pix & 3];
@@ -517,11 +527,18 @@ static inline void frogger_render_sprite_raster(unsigned short chunk)
     {
         int x_vert = 224 - sprite[s].x - 16;
 
+
+        if (sprite[s].y * 8 > GAME_WIDTH)
+        {
+        //    x_vert = upper_sprite_bound;
+        }
+
+
         // check if sprite is visible on this row
         if ((x_vert < upper_sprite_bound) && ((x_vert + 16) > lower_sprite_bound))
         {
-            const unsigned long* spr = dkong_sprites[sprite[s].flags & 3][sprite[s].code];
-            const unsigned short* colors = dkong_colormap_sprite[colortable_select][sprite[s].color];
+            const unsigned long* spr = frogger_sprites[sprite[s].flags & 3][sprite[s].code];
+            const unsigned short* colors = frogger_colormap[sprite[s].color];
 
             short sprite_chunk_offset = x_vert - chunk_vert_start;
 
@@ -552,9 +569,8 @@ static inline void frogger_render_sprite_raster(unsigned short chunk)
             unsigned short* ptr = frame_buffer + ((scanline_start)*TV_WIDTH) + sprite[s].y;
 
             for (char r = 0; r < lines2draw; r++, ptr += (TV_WIDTH - 16))
-
             {
-                unsigned long pix = *spr++;//& mask;
+                unsigned long pix = *spr++;
                 // 16 pixel columns per tile
                 for (char c = 0; c < 16; c++, pix >>= 2)
                 {
@@ -580,32 +596,33 @@ static inline void frogger_render_frame_raster()
     // Real hardware does this line by line, but checking dozens of sprites on each scanline isn't efficient or necessary
 
 
-
+    //TODO: Either make use of this rendering 'chunk' idea properly, or bin it.
+   
+    // the upper screen half of frogger has a blue background (left side on raster scan)
     frame_buffer = &nextframeptr[0];
-    //Sprites
-    // dkong has its own sprite drawing routine since unlike the other
-    // games, in dkong black is not always transparent. Black pixels
-    // are instead used for masking
+
+    int background_limit = 18 * 8;
+    
+    for (int y = 0; y < TV_HEIGHT; y++)
+    {
+        int y_offset = y * TV_WIDTH;
+        for (int x = 0; x < background_limit; x++)
+        {
+            frame_buffer[x + y_offset] = BACKGROUND_COLOUR;
+        }
+        
+        for (int x = background_limit; x < TV_WIDTH; x++)
+        {
+            frame_buffer[x + y_offset] = 0;
+        }
+    }
+
 
     for (int chunk = 0; chunk < TV_HEIGHT / CHUNKSIZE; chunk++)
     {
 
-        unsigned short* store = &nextframeptr[chunk * CHUNKSIZE * TV_WIDTH];
-
-        //TODO:
-        // the upper screen half of frogger has a blue background
-        // using 8 in fact adds a tiny fraction of red as well. But that does not hurt
-        //memset(frame_buffer, (MACHINE_IS_FROGGER && row <= 17) ? 8 : 0, 2 * 224 * 8);
-
-        for (int x = 0; x < TV_WIDTH * CHUNKSIZE; x++)
-        {
-            store[x] = 0;
-        }
-
         frogger_render_tile_raster(chunk);
-       // frogger_render_sprite_raster(chunk);
-
-
+        frogger_render_sprite_raster(chunk);
     }
 }
 

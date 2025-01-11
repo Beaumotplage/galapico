@@ -180,7 +180,7 @@ static inline void galaga_WrZ80(unsigned short Addr, unsigned char Value) {
 }
 
 static inline void galaga_run_frame(void) {
-	for (int i = 0; i < INST_PER_FRAME; i++) {
+	for (int i = 0; i < INST_PER_FRAME_GALAGA; i++) {
 		current_cpu = 0;
 		StepZ80(cpu); StepZ80(cpu); StepZ80(cpu); StepZ80(cpu);
 		if (!sub_cpu_reset) {
@@ -207,7 +207,7 @@ static inline void galaga_run_frame(void) {
 
 		// run cpu2 nmi at ~line 64 and line 192
 		if (!sub_cpu_reset && !irq_enable[2] &&
-			((i == INST_PER_FRAME / 4) || (i == 3 * INST_PER_FRAME / 4))) {
+			((i == INST_PER_FRAME_GALAGA / 4) || (i == 3 * INST_PER_FRAME_GALAGA / 4))) {
 			current_cpu = 2;
 			IntZ80(&cpu[2], INT_NMI);
 		}

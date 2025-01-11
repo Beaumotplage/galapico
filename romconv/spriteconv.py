@@ -51,8 +51,8 @@ def parse_sprite_frogger(data):
     for y in range(16):
         row = [ ]
         for x in range(16):
-            ym = y & 7 | ((x & 8) ^ 8)
-            xm = x & 7 | (y & 8)
+            ym = x & 7 | (((15-y) & 8) ^ 8)
+            xm = (15-y) & 7 | (x & 8)
             
             c0 = 1 if data[0][(xm^7) + ((ym & 8) << 1)] & (0x80 >> (ym&7)) else 0
             c1 = 2 if data[1][(xm^7) + ((ym & 8) << 1)] & (0x80 >> (ym&7)) else 0

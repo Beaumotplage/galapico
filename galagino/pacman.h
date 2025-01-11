@@ -83,7 +83,7 @@ static inline void pacman_OutZ80(unsigned short Port, unsigned char Value) {
 
 //
 static inline void pacman_run_frame(void) {
-	for (int i = 0; i < INST_PER_FRAME; i++) {
+	for (int i = 0; i < INST_PER_FRAME_PACMAN; i++) {
 		StepZ80(cpu); StepZ80(cpu); StepZ80(cpu); StepZ80(cpu);
 	}
 

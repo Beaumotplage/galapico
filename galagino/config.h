@@ -5,7 +5,7 @@
 #define ENABLE_PACMAN
 #define ENABLE_GALAGA
 #define ENABLE_DKONG
-//#define ENABLE_FROGGER
+#define ENABLE_FROGGER
 #define ENABLE_DIGDUG
 #define ENABLE_1942
 
@@ -35,6 +35,13 @@
 // Fine tune the length of the screen. Be careful. 0.05 is a fair few pixels 
 #define raster_clock_divider (1.85f)
 
+// Z80 execution rates. Seemed best to separate the for each game and put in here, especially as it gets very CPU intensive for some games to go 100%
 
+#define INST_PER_FRAME_PACMAN 300000/60/4
+#define INST_PER_FRAME_1942 300000/60/4
+#define INST_PER_FRAME_GALAGA 300000/60/4
+#define INST_PER_FRAME_FROGGER 300000/60/4
+#define INST_PER_FRAME_DIGDUG 150000/60/4
+#define INST_PER_FRAME_DKONG 300000/60/4
 
 #endif // _CONFIG_H_

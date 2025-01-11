@@ -103,7 +103,7 @@ static inline void digdug_WrZ80(unsigned short Addr, unsigned char Value) {
 
 static inline void digdug_run_frame(void) {
 	for (char c = 0; c < 4; c++) {
-		for (int i = 0; i < INST_PER_FRAME / 4; i++) {
+		for (int i = 0; i < INST_PER_FRAME_DIGDUG / 4; i++) {
 			current_cpu = 0;
 			StepZ80(cpu); digdug_StepZ80(cpu); digdug_StepZ80(cpu); digdug_StepZ80(cpu);
 			if (!sub_cpu_reset) {

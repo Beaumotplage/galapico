@@ -32,14 +32,7 @@
 #define RAMSIZE   (8192)
 #endif
 
-unsigned char jb_ram[RAMSIZE];
-
-// one inst at 3Mhz ~ 500k inst/sec = 500000/60 inst per frame
-// Galagino defaults to 300k
-// We will too for now, until I can optimise to run at full speed
-#define INST_PER_FRAME 300000/60/4
-//#define INST_PER_FRAME 500000/60/4
-
+unsigned char game_ram[RAMSIZE];
 
 extern void StepZ80(Z80 *R);
 extern void digdug_StepZ80(Z80 *R);
@@ -570,8 +563,7 @@ unsigned char i8048_xdm_read(struct i8048_state_S *state, unsigned char addr) {
 
 void prepare_emulation(void) {
 
-    memory = &jb_ram[0];
-    memset(memory, 0, RAMSIZE);
+    memory = &game_ram[0];
 
 #if defined(MASTER_ATTRACT_MENU_TIMEOUT) && !defined(SINGLE_MACHINE)
   master_attract_timeout = millis();

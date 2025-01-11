@@ -109,7 +109,7 @@ static inline void dkong_run_frame(void) {
 	game_started = 1; // TODO: make this from some graphic thing
 
 	// dkong      
-	for (int i = 0; i < INST_PER_FRAME; i++) {
+	for (int i = 0; i < INST_PER_FRAME_DKONG; i++) {
 		StepZ80(cpu); StepZ80(cpu); StepZ80(cpu); StepZ80(cpu);
 
 		// run audio cpu only when audio transfer buffers are not full. The
